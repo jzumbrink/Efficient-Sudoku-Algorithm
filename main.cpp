@@ -1,9 +1,4 @@
 #include <iostream>
-
-#include "Field.h"
-#include "OpenField.h"
-#include "Dimension.h"
-
 #include <vector>
 #include <set>
 #include <queue>
@@ -45,14 +40,6 @@ void read_file(string filename, vector<int> &fields){
 
 int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set){
     //First Intersetion
-    horizontal_set.erase(1);
-    horizontal_set.erase(2);
-    horizontal_set.erase(3);
-    horizontal_set.erase(4);
-    horizontal_set.erase(5);
-    horizontal_set.erase(6);
-    horizontal_set.erase(7);
-    horizontal_set.erase(8);
     set<int> result_step_one;
     set_intersection(horizontal_set.begin(), horizontal_set.end(), vertical_set.begin(), vertical_set.end(), inserter(result_step_one, result_step_one.begin()));
     //Second Intersection with both of first Intersection
@@ -66,11 +53,11 @@ int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, se
     }
 }
 
-void append_affected_fields_to_queue(int index_changed_field, int value, queue<int> &affected_queue, set<int> &affected_set, int n, int root_n, int cluster){
+void append_affected_fields_to_queue(int index_changed_field, vector<int> &fields, queue<int> &affected_queue, set<int> &affected_set, int n, int root_n, int cluster){
     set<int> affected_fields_indices;
 
     for (int i = 0; i < n; ++i) {
-        affected_fields_indices.insert(index_changed_field+i); //horizontal dimension
+        affected_fields_indices.insert(n * (index_changed_field/n) + i); //horizontal dimension
         affected_fields_indices.insert(i * n + index_changed_field % n); //vertical dimension
     }
 
@@ -86,7 +73,7 @@ void append_affected_fields_to_queue(int index_changed_field, int value, queue<i
 
     set<int>::iterator it = affected_fields_indices.begin();
     while (it != affected_fields_indices.end()){
-        if (affected_set.count(*it) == 0) {
+        if (affected_set.count(*it) == 0 && !fields.at(*it)) {
             //nur einfügen, falls das Element noch nicht in der Warteschlange ist
             affected_queue.push(*it);
             affected_set.insert(*it);
@@ -167,19 +154,16 @@ int main() {
             cluster_dimensions.at(cluster).erase(determine_result);
 
             //Weitere Felder der Warteschlange hinzufügen
-            append_affected_fields_to_queue(index, determine_result, affected_queue, affected_set, n, root_n, cluster);
+            append_affected_fields_to_queue(index, fields, affected_queue, affected_set, n, root_n, cluster);
         }
-        cout << "Test\n";
     }
 
-    set<int> test1{1, 3, 4, 6, 8};
-    set<int> test2{2, 4, 5, 6, 7};
-
-    set<int> intersect;
-
-    set_intersection(test1.begin(), test1.end(), test2.begin(), test2.end(), inserter(intersect, intersect.begin()));
-
-    cout << intersect.size();
+    for (int k = 0; k < fields.size(); ++k) {
+        if (k % n == 0){
+            cout << endl;
+        }
+        cout << fields.at(k) << " ";
+    }
 
     return 0;
 }
