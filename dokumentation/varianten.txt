@@ -1,0 +1,8 @@
+Variante 1:
+
+Es gibt nur eine legitime Ziffer für das Feld (bisher implementiert)
+
+
+Variante 2:
+
+In einer Dimension gibt es nur eine Möglichkeit eine Ziffer zu platzieren, da alle anderen Möglichkeiten nicht zulässig sind (nicht implementiert) -> todo
