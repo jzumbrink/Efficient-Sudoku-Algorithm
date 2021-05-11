@@ -48,44 +48,64 @@ set<int> determine_certain_value_variant_one(set<int> &horizontal_set, set<int> 
     return final_result;
 }
 
-void get_all_horizontal_indices(set<int> &all_indices ,int index, int n){
+set<int> get_all_horizontal_indices(int index, int n, vector<int> &fields){
+    set<int> all_horizontal_indices;
     for (int i = 0; i < n; ++i) {
-        all_indices.insert(get_horizontal(index, n) * n + i);
+        int pos_index = get_horizontal(index, n) * n + i;
+        if (fields.at(pos_index) == 0 || true) {
+            all_horizontal_indices.insert(pos_index);
+        }
     }
+    all_horizontal_indices.erase(index);
+    return all_horizontal_indices;
 }
 
-void get_all_vertical_indices(set<int> &all_indices, int index, int n){
+set<int> get_all_vertical_indices( int index, int n, vector<int> &fields){
+    set<int> all_vertical_indices;
     for (int i = 0; i < n; ++i) {
-        all_indices.insert(i * n + get_vertical(index, n));
+        int pos_index = i * n + get_vertical(index, n);
+        if (fields.at(pos_index) == 0 || true) {
+            all_vertical_indices.insert(pos_index);
+        }
     }
+    all_vertical_indices.erase(index);
+    return all_vertical_indices;
 }
 
-void get_all_cluster_indices(set<int> &all_indices, int index, int root_n){
+set<int> get_all_cluster_indices(int index, int root_n, vector<int> &fields){
+    set<int> all_cluster_indices;
     int start_x = get_cluster(index, root_n)%root_n * root_n;
     int start_y = get_cluster(index, root_n)/root_n * root_n;
     for (int x = start_x; x < start_x + root_n; ++x) {
         for (int y = start_y; y < start_y + root_n; ++y) {
-            all_indices.insert(y * root_n * root_n + x);
+            int pos_index = y * root_n * root_n + x;
+            if (fields.at(pos_index) == 0 || true) {
+                all_cluster_indices.insert(pos_index);
+            }
         }
     }
+    all_cluster_indices.erase(index);
+    return all_cluster_indices;
 }
 
 bool is_value_valid_here(int value, set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set){
     return (determine_certain_value_variant_one(horizontal_set, vertical_set, cluster_set).count(value)) != 0;
 }
 
-bool is_value_valid_somewhere_else(set<int> &other_indices, int value, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int n){
+bool is_value_valid_somewhere_else(set<int> &other_indices, int value, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int n, int root_n, vector<int> &fields){
+    //checken, ob Wert schon irgendwo in der Dimension platziert wurde
     set<int>::iterator iterator_other_indices = other_indices.begin();
     while (iterator_other_indices != other_indices.end()){
         int index = *iterator_other_indices;
-        if(is_value_valid_here(value, horizontal_dimensions.at(get_horizontal(index, n)), vertical_dimensions.at(get_vertical(index, n)), cluster_dimensions.at(get_cluster(index, n)))){
+        if(fields.at(index) == value || (fields.at(index) == 0 && is_value_valid_here(value, horizontal_dimensions.at(get_horizontal(index, n)), vertical_dimensions.at(get_vertical(index, n)), cluster_dimensions.at(get_cluster(index, root_n))))){
             return true;
         }
+        iterator_other_indices++;
     }
     return false;
 }
 
-int determine_certain_value_variant_two(set<int> &intersection_result, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int index, int root_n){
+int determine_certain_value_variant_two(set<int> &intersection_result, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int index, int root_n, vector<int> &fields){
     int n = root_n * root_n;
 
     set<int>::iterator iterator_pos_value = intersection_result.begin();
@@ -93,12 +113,13 @@ int determine_certain_value_variant_two(set<int> &intersection_result, vector<se
     while (iterator_pos_value != intersection_result.end()){
         cout << *iterator_pos_value << endl;
         int value = *iterator_pos_value;
-        set<int> all_indices;
-        get_all_horizontal_indices(all_indices, index, n);
-        get_all_vertical_indices(all_indices, index, n);
-        get_all_cluster_indices(all_indices, index, root_n);
-        all_indices.erase(index);
-        if (!is_value_valid_somewhere_else(all_indices, value, horizontal_dimensions, vertical_dimensions, cluster_dimensions, n)){
+        set<int> horizontal_indices = get_all_horizontal_indices(index, n, fields);
+        set<int> vertical_indices = get_all_vertical_indices(index, n, fields);
+        set<int> cluster_indices = get_all_cluster_indices(index, root_n, fields);
+        if (!is_value_valid_somewhere_else(horizontal_indices, value, horizontal_dimensions, vertical_dimensions, cluster_dimensions, n, root_n, fields)
+        || !is_value_valid_somewhere_else(vertical_indices, value, horizontal_dimensions, vertical_dimensions, cluster_dimensions, n, root_n, fields)
+        || !is_value_valid_somewhere_else(cluster_indices, value, horizontal_dimensions, vertical_dimensions, cluster_dimensions, n, root_n, fields)
+        ) {
             return value;
         }
         iterator_pos_value++;
@@ -106,15 +127,15 @@ int determine_certain_value_variant_two(set<int> &intersection_result, vector<se
     return 0;
 }
 
-int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int index, int root_n){
+int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, vector<int> &fields, int index, int root_n){
     set<int> final_result = determine_certain_value_variant_one(horizontal_set, vertical_set, cluster_set);
     if(final_result.size() == 1){
         //1. Variante funktioniert
         return *(final_result.begin());
     } else{
         //1. Variante funktioniert nicht -> 2. Variante prüfen
-        //return determine_certain_value_variant_two(final_result, horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n);
-        return 0;
+        return determine_certain_value_variant_two(final_result, horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n, fields);
+        //return 0;
     }
 }
 
@@ -169,7 +190,7 @@ int main() {
     //Felder
     vector<int> fields;
 
-    read_file("../beispiele/1.txt", fields);
+    read_file("../beispiele/2.txt", fields);
 
     int root_n = 3;
     int n = root_n * root_n;
@@ -209,7 +230,7 @@ int main() {
         horizontal = get_horizontal(index, n);
         vertical = get_vertical(index, n);
         cluster = get_cluster(index, root_n);
-        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n);
+        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, index, root_n);
 
         if (determine_result > 0){ //oder eine andere Variante ist erfüllt, bisher nur Variante 1 betrachtet -> todo
             //Ein Wert ist eindeutig zuordenbar
