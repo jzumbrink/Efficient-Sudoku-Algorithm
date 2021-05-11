@@ -48,44 +48,72 @@ set<int> determine_certain_value_variant_one(set<int> &horizontal_set, set<int> 
     return final_result;
 }
 
-bool is_value_valid_somewhere_else(vector<int> other_indices, int value){
-
+void get_all_horizontal_indices(set<int> &all_indices ,int index, int n){
+    for (int i = 0; i < n; ++i) {
+        all_indices.insert(get_horizontal(index, n) * n + i);
+    }
 }
 
-int determine_certain_value_variant_two(set<int> &intersection_result, int horizontal, set<int> &horizontal_set, vector<set<int>> &horizontal_dimensions, int vertical, set<int> &vertical_set, vector<set<int>> &vertical_dimensions, int cluster, set<int> &cluster_set, vector<set<int>> &cluster_dimensions, int index, int root_n){
-    int n = root_n * root_n;
-    set<int> copied_horizontal_set = horizontal_set;
-    int start_horizontal = index - index%n;
-    set<int> copied_vertical_set = vertical_set;
-    set<int> copied_cluster_set = cluster_set;
-    unordered_map<int, int> count_other_possibilities;
-    for (int index_horizontal = start_horizontal; index_horizontal < start_horizontal + n; ++index_horizontal) {
-        //prüfen, ob eine Möglichkeit aus den Sets auf einem Feld platziert werden kann.
-        //Horitontal
-        if (index_horizontal != index){
-            int new_horizontal = get_horizontal(index_horizontal, n);
-            int new_vertical = get_vertical(index_horizontal, n);
-            int new_cluster = get_cluster(index_horizontal, n);
-            set<int> result_values = intersection_three_dimensions(horizontal_dimensions.at(new_horizontal), vertical_dimensions.at(new_vertical), cluster_dimensions.at(new_cluster));
+void get_all_vertical_indices(set<int> &all_indices, int index, int n){
+    for (int i = 0; i < n; ++i) {
+        all_indices.insert(i * n + get_vertical(index, n));
+    }
+}
+
+void get_all_cluster_indices(set<int> &all_indices, int index, int root_n){
+    int start_x = get_cluster(index, root_n)%root_n * root_n;
+    int start_y = get_cluster(index, root_n)/root_n * root_n;
+    for (int x = start_x; x < start_x + root_n; ++x) {
+        for (int y = start_y; y < start_y + root_n; ++y) {
+            all_indices.insert(y * root_n * root_n + x);
         }
     }
+}
 
+bool is_value_valid_here(int value, set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set){
+    return (determine_certain_value_variant_one(horizontal_set, vertical_set, cluster_set).count(value)) != 0;
+}
+
+bool is_value_valid_somewhere_else(set<int> &other_indices, int value, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int n){
+    set<int>::iterator iterator_other_indices = other_indices.begin();
+    while (iterator_other_indices != other_indices.end()){
+        int index = *iterator_other_indices;
+        if(is_value_valid_here(value, horizontal_dimensions.at(get_horizontal(index, n)), vertical_dimensions.at(get_vertical(index, n)), cluster_dimensions.at(get_cluster(index, n)))){
+            return true;
+        }
+    }
+    return false;
+}
+
+int determine_certain_value_variant_two(set<int> &intersection_result, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int index, int root_n){
+    int n = root_n * root_n;
 
     set<int>::iterator iterator_pos_value = intersection_result.begin();
-    while (iterator_pos_value != intersection_result.end()){
 
+    while (iterator_pos_value != intersection_result.end()){
+        cout << *iterator_pos_value << endl;
+        int value = *iterator_pos_value;
+        set<int> all_indices;
+        get_all_horizontal_indices(all_indices, index, n);
+        get_all_vertical_indices(all_indices, index, n);
+        get_all_cluster_indices(all_indices, index, root_n);
+        all_indices.erase(index);
+        if (!is_value_valid_somewhere_else(all_indices, value, horizontal_dimensions, vertical_dimensions, cluster_dimensions, n)){
+            return value;
+        }
         iterator_pos_value++;
     }
     return 0;
 }
 
-int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set){
+int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, int index, int root_n){
     set<int> final_result = determine_certain_value_variant_one(horizontal_set, vertical_set, cluster_set);
     if(final_result.size() == 1){
         //1. Variante funktioniert
         return *(final_result.begin());
     } else{
         //1. Variante funktioniert nicht -> 2. Variante prüfen
+        //return determine_certain_value_variant_two(final_result, horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n);
         return 0;
     }
 }
@@ -181,7 +209,7 @@ int main() {
         horizontal = get_horizontal(index, n);
         vertical = get_vertical(index, n);
         cluster = get_cluster(index, root_n);
-        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster));
+        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n);
 
         if (determine_result > 0){ //oder eine andere Variante ist erfüllt, bisher nur Variante 1 betrachtet -> todo
             //Ein Wert ist eindeutig zuordenbar
