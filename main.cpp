@@ -190,7 +190,7 @@ int main() {
     //Felder
     vector<int> fields;
 
-    read_file("../beispiele/2.txt", fields);
+    read_file("../beispiele/3.txt", fields);
 
     int root_n = 3;
     int n = root_n * root_n;
