@@ -111,7 +111,6 @@ int determine_certain_value_variant_two(set<int> &intersection_result, vector<se
     set<int>::iterator iterator_pos_value = intersection_result.begin();
 
     while (iterator_pos_value != intersection_result.end()){
-        cout << *iterator_pos_value << endl;
         int value = *iterator_pos_value;
         set<int> horizontal_indices = get_all_horizontal_indices(index, n, fields);
         set<int> vertical_indices = get_all_vertical_indices(index, n, fields);
@@ -190,7 +189,11 @@ int main() {
     //Felder
     vector<int> fields;
 
-    read_file("../beispiele/3.txt", fields);
+    string filename;
+    cout << "Filename:\n";
+    cin >> filename;
+
+    read_file("../beispiele/"+filename, fields);
 
     int root_n = 3;
     int n = root_n * root_n;
