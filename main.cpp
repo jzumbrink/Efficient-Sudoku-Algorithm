@@ -6,6 +6,7 @@
 #include <fstream>
 #include <ctype.h>
 #include <unordered_map>
+#include <math.h>
 
 using namespace std;
 
@@ -126,15 +127,24 @@ int determine_certain_value_variant_two(set<int> &intersection_result, vector<se
     return 0;
 }
 
-int determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, vector<int> &fields, int index, int root_n){
+vector<int> determine_certain_value(set<int> &horizontal_set, set<int> &vertical_set, set<int> &cluster_set, vector<set<int>> &horizontal_dimensions, vector<set<int>> &vertical_dimensions, vector<set<int>> &cluster_dimensions, vector<int> &fields, int index, int root_n){
     set<int> final_result = determine_certain_value_variant_one(horizontal_set, vertical_set, cluster_set);
-    if(final_result.size() == 1){
-        //1. Variante funktioniert
-        return *(final_result.begin());
-    } else{
+    vector<int> result(final_result.begin(), final_result.end());
+
+    if(final_result.size() <= 1) {
+        return result;
+    }else{
         //1. Variante funktioniert nicht -> 2. Variante prüfen
-        return determine_certain_value_variant_two(final_result, horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n, fields);
-        //return 0;
+        int result_variant_two = determine_certain_value_variant_two(final_result, horizontal_dimensions, vertical_dimensions, cluster_dimensions, index, root_n, fields);
+        if(result_variant_two > 0){
+            //Ergebnis bei Variante 2 gefunden
+            result.clear();
+            result.push_back(result_variant_two);
+            return result;
+        }else{
+            //Da nicht neues gefunden wurde, werden alle möglichen zurückgegeben
+            return result;
+        }
     }
 }
 
@@ -186,6 +196,9 @@ void fill_dimensions(vector<set<int>> &horizontal_dimensions, vector<set<int>> &
 
 vector<int> solve_puzzle(vector<int> fields, int root_n){
     int n = root_n * root_n;
+    int count_fields = pow(root_n, 4);
+    int open_fields_left = count_fields;
+    vector<int> empty_vector;
 
     //Dimensionen
     vector<set<int>> horizontal_dimensions;
@@ -207,6 +220,7 @@ vector<int> solve_puzzle(vector<int> fields, int root_n){
             vertical_dimensions.at(vertical).erase(value);
             cluster = get_cluster(j, root_n);
             cluster_dimensions.at(cluster).erase(value);
+            open_fields_left--;
         } else{
             //offenes Feld
             affected_queue.push(j);
@@ -222,20 +236,44 @@ vector<int> solve_puzzle(vector<int> fields, int root_n){
         horizontal = get_horizontal(index, n);
         vertical = get_vertical(index, n);
         cluster = get_cluster(index, root_n);
-        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, index, root_n);
+        vector<int> determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, index, root_n);
 
-        if (determine_result > 0){ //oder eine andere Variante ist erfüllt, bisher nur Variante 1 betrachtet -> todo
+        if (determine_result.size() == 1){ //oder eine andere Variante ist erfüllt, bisher nur Variante 1 und Variante 2 betrachtet
             //Ein Wert ist eindeutig zuordenbar
             //Wert speichern
-            fields.at(index) = determine_result;
+            int correct_number = determine_result.at(0);
+            fields.at(index) = correct_number;
             //Die verwendete Zahl als  Möglichkeit für die betroffenen drei Dimensionen löschen
-            horizontal_dimensions.at(horizontal).erase(determine_result);
-            vertical_dimensions.at(vertical).erase(determine_result);
-            cluster_dimensions.at(cluster).erase(determine_result);
+            horizontal_dimensions.at(horizontal).erase(correct_number);
+            vertical_dimensions.at(vertical).erase(correct_number);
+            cluster_dimensions.at(cluster).erase(correct_number);
 
             //Weitere Felder der Warteschlange hinzufügen
             append_affected_fields_to_queue(index, fields, affected_queue, affected_set, n, root_n, cluster);
+            open_fields_left--;
+        } else if ( determine_result.size() == 0){
+            //es gibt keine Lösung für das Sudoku, das Sudoku ist ungültig
+            //das passiert, wenn a) die Eingabe ungültig ist oder b) bei Variante 3
+            return empty_vector;
         }
+    }
+
+    if (open_fields_left > 0){
+        //es sind noch nicht für alle Felder Lösungen bekannt.
+        //1. Prüfen, ob eine Lösung möglich ist. Falls nein, dann leere Liste zurückgeben
+        vector<vector<int>> fields_possibilities;
+        for (int i = 0; i < count_fields; ++i) {
+            horizontal = get_horizontal(i, n);
+            vertical = get_vertical(i, n);
+            cluster = get_cluster(i, root_n);
+            vector<int> determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, i, root_n);
+            if (determine_result.size() == 0){
+                //Sudoku ist ungültig
+                return empty_vector;
+            }
+        }
+        //2. Ein Feld auswählen, bei dem eine Zahl ausgewählt wird.
+
     }
 
     return fields;
@@ -253,68 +291,16 @@ int main() {
 
     read_file("../beispiele/"+filename, fields);
 
-    vector<int> fields_result = solve_puzzle(fields, 3);
-
     int root_n = 3;
-    int n = root_n * root_n;
 
-    //Dimensionen
-    vector<set<int>> horizontal_dimensions;
-    vector<set<int>> vertical_dimensions;
-    vector<set<int>> cluster_dimensions;
-    fill_dimensions(horizontal_dimensions, vertical_dimensions, cluster_dimensions, n);
-
-    queue<int> affected_queue;
-    set<int> affected_set;
-    int horizontal, vertical, cluster;
-
-    //Das erste Mal alle offenen Felder der Schlange hinzufügen
-    for (int j = 0; j < fields.size(); ++j) {
-        if (fields.at(j)){ //größer als 0, vorher festgelegtes Feld
-            int value = fields.at(j);
-            horizontal = get_horizontal(j, n);
-            horizontal_dimensions.at(horizontal).erase(value);
-            vertical = get_vertical(j, n);
-            vertical_dimensions.at(vertical).erase(value);
-            cluster = get_cluster(j, root_n);
-            cluster_dimensions.at(cluster).erase(value);
-        } else{
-            //offenes Feld
-            affected_queue.push(j);
-            affected_set.insert(j);
-        }
-    }
-
-    while (!affected_queue.empty()){
-        int index = affected_queue.front();
-        affected_queue.pop();
-        affected_set.erase(index);
-
-        horizontal = get_horizontal(index, n);
-        vertical = get_vertical(index, n);
-        cluster = get_cluster(index, root_n);
-        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, index, root_n);
-
-        if (determine_result > 0){ //oder eine andere Variante ist erfüllt, bisher nur Variante 1 betrachtet -> todo
-            //Ein Wert ist eindeutig zuordenbar
-            //Wert speichern
-            fields.at(index) = determine_result;
-            //Die verwendete Zahl als  Möglichkeit für die betroffenen drei Dimensionen löschen
-            horizontal_dimensions.at(horizontal).erase(determine_result);
-            vertical_dimensions.at(vertical).erase(determine_result);
-            cluster_dimensions.at(cluster).erase(determine_result);
-
-            //Weitere Felder der Warteschlange hinzufügen
-            append_affected_fields_to_queue(index, fields, affected_queue, affected_set, n, root_n, cluster);
-        }
-    }
+    vector<int> fields_result = solve_puzzle(fields, root_n);
 
     cout << "Result:";
-    for (int k = 0; k < fields.size(); ++k) {
-        if (k % n == 0){
+    for (int k = 0; k < fields_result.size(); ++k) {
+        if (k % (root_n * root_n) == 0){
             cout << endl;
         }
-        cout << fields.at(k) << " ";
+        cout << fields_result.at(k) << " ";
     }
 
     return 0;

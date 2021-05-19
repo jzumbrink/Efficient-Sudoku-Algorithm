@@ -5,4 +5,8 @@ Es gibt nur eine legitime Ziffer für das Feld (bisher implementiert)
 
 Variante 2:
 
-In einer Dimension gibt es nur eine Möglichkeit eine Ziffer zu platzieren, da alle anderen Möglichkeiten nicht zulässig sind (nicht implementiert) -> todo
+In einer Dimension gibt es nur eine Möglichkeit eine Ziffer zu platzieren, da alle anderen Möglichkeiten nicht zulässig sind (nicht implementiert) (implemented)
+
+Variante 3:
+
+Keine der Varianten 1 und 2 trifft zu. Deswegen muss eine Zahl aus einer Reihe von möglichen ausgewählt werden und es wird geprüft, ob so eine Lösung erreicht werden kann. Falls dies nicht der Fall ist, dann wird eine andere mögliche Zahl für das Feld benutzt -> todo
