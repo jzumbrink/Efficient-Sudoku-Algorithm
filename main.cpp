@@ -261,19 +261,44 @@ vector<int> solve_puzzle(vector<int> fields, int root_n){
     if (open_fields_left > 0){
         //es sind noch nicht für alle Felder Lösungen bekannt.
         //1. Prüfen, ob eine Lösung möglich ist. Falls nein, dann leere Liste zurückgeben
-        vector<vector<int>> fields_possibilities;
+        vector<int> field_possibilities;
+        int field_index;
+        int least_count_of_possibilities = -1;
         for (int i = 0; i < count_fields; ++i) {
             horizontal = get_horizontal(i, n);
             vertical = get_vertical(i, n);
             cluster = get_cluster(i, root_n);
-            vector<int> determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, i, root_n);
-            if (determine_result.size() == 0){
-                //Sudoku ist ungültig
-                return empty_vector;
+            if (fields.at(i) == 0) {
+                vector<int> determine_result = determine_certain_value(horizontal_dimensions.at(horizontal),
+                                                                       vertical_dimensions.at(vertical),
+                                                                       cluster_dimensions.at(cluster),
+                                                                       horizontal_dimensions, vertical_dimensions,
+                                                                       cluster_dimensions, fields, i, root_n);
+                if (least_count_of_possibilities == -1 || determine_result.size() < least_count_of_possibilities) {
+                    field_possibilities = determine_result;
+                    field_index = i;
+                    least_count_of_possibilities = determine_result.size();
+                }
+
+                if (determine_result.size() == 0) {
+                    //Sudoku ist ungültig
+                    return empty_vector;
+                }
             }
         }
-        //2. Ein Feld auswählen, bei dem eine Zahl ausgewählt wird.
-
+        //2. Ein Feld auswählen, bei dem eine Zahl ausgewählt wird.´(Eines der Felder mit den wenigsten Möglichkeiten)
+        vector<int>::iterator field_pos_iterator = field_possibilities.begin();
+        while (field_pos_iterator != field_possibilities.end()){
+            fields.at(field_index) = *field_pos_iterator;
+            vector<int> result = solve_puzzle(fields, root_n);
+            if (result.size() > 0){
+                //es wurde mit der Auswahl eine gültige Belegung gefunden
+                return result;
+            }
+            field_pos_iterator++;
+        }
+        //Es gibt keine gültige Belegung
+        return empty_vector;
     }
 
     return fields;
