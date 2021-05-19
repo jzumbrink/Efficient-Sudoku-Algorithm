@@ -184,6 +184,64 @@ void fill_dimensions(vector<set<int>> &horizontal_dimensions, vector<set<int>> &
     }
 }
 
+vector<int> solve_puzzle(vector<int> fields, int root_n){
+    int n = root_n * root_n;
+
+    //Dimensionen
+    vector<set<int>> horizontal_dimensions;
+    vector<set<int>> vertical_dimensions;
+    vector<set<int>> cluster_dimensions;
+    fill_dimensions(horizontal_dimensions, vertical_dimensions, cluster_dimensions, n);
+
+    queue<int> affected_queue;
+    set<int> affected_set;
+    int horizontal, vertical, cluster;
+
+    //Das erste Mal alle offenen Felder der Schlange hinzufügen
+    for (int j = 0; j < fields.size(); ++j) {
+        if (fields.at(j)){ //größer als 0, vorher festgelegtes Feld
+            int value = fields.at(j);
+            horizontal = get_horizontal(j, n);
+            horizontal_dimensions.at(horizontal).erase(value);
+            vertical = get_vertical(j, n);
+            vertical_dimensions.at(vertical).erase(value);
+            cluster = get_cluster(j, root_n);
+            cluster_dimensions.at(cluster).erase(value);
+        } else{
+            //offenes Feld
+            affected_queue.push(j);
+            affected_set.insert(j);
+        }
+    }
+
+    while (!affected_queue.empty()){
+        int index = affected_queue.front();
+        affected_queue.pop();
+        affected_set.erase(index);
+
+        horizontal = get_horizontal(index, n);
+        vertical = get_vertical(index, n);
+        cluster = get_cluster(index, root_n);
+        int determine_result = determine_certain_value(horizontal_dimensions.at(horizontal), vertical_dimensions.at(vertical), cluster_dimensions.at(cluster), horizontal_dimensions, vertical_dimensions, cluster_dimensions, fields, index, root_n);
+
+        if (determine_result > 0){ //oder eine andere Variante ist erfüllt, bisher nur Variante 1 betrachtet -> todo
+            //Ein Wert ist eindeutig zuordenbar
+            //Wert speichern
+            fields.at(index) = determine_result;
+            //Die verwendete Zahl als  Möglichkeit für die betroffenen drei Dimensionen löschen
+            horizontal_dimensions.at(horizontal).erase(determine_result);
+            vertical_dimensions.at(vertical).erase(determine_result);
+            cluster_dimensions.at(cluster).erase(determine_result);
+
+            //Weitere Felder der Warteschlange hinzufügen
+            append_affected_fields_to_queue(index, fields, affected_queue, affected_set, n, root_n, cluster);
+        }
+    }
+
+    return fields;
+}
+
+
 int main() {
 
     //Felder
@@ -194,6 +252,8 @@ int main() {
     cin >> filename;
 
     read_file("../beispiele/"+filename, fields);
+
+    vector<int> fields_result = solve_puzzle(fields, 3);
 
     int root_n = 3;
     int n = root_n * root_n;
