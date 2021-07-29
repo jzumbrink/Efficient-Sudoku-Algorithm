@@ -9,4 +9,4 @@ In einer Dimension gibt es nur eine Möglichkeit eine Ziffer zu platzieren, da a
 
 Variante 3:
 
-Keine der Varianten 1 und 2 trifft zu. Deswegen muss eine Zahl aus einer Reihe von möglichen ausgewählt werden und es wird geprüft, ob so eine Lösung erreicht werden kann. Falls dies nicht der Fall ist, dann wird eine andere mögliche Zahl für das Feld benutzt -> todo
+Keine der Varianten 1 und 2 trifft zu. Deswegen muss eine Zahl aus einer Reihe von möglichen ausgewählt werden und es wird geprüft, ob so eine Lösung erreicht werden kann. Falls dies nicht der Fall ist, dann wird eine andere mögliche Zahl für das Feld benutzt (implemented)

@@ -307,14 +307,13 @@ vector<int> solve_puzzle(vector<int> fields, int root_n){
 
 int main() {
 
-    //Felder
     vector<int> fields;
 
     string filename;
     cout << "Filename:\n";
     cin >> filename;
 
-    read_file("../beispiele/"+filename, fields);
+    read_file("../examples/"+filename, fields);
 
     int root_n = 3;
 
